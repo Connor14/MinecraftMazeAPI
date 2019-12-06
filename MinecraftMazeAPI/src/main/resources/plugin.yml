@@ -1,0 +1,6 @@
+name: MinecraftMazeAPI
+version: ${project.version}
+main: dev.connor14.minecraftmazeapi.MinecraftMazeApi
+api-version: 1.13
+description: An API for generating mazes. That is all.
+website: https://github.com/Connor14/MinecraftMazeAPI
