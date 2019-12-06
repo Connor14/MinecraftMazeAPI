@@ -4,3 +4,7 @@ main: dev.connor14.minecraftmazeapi.MinecraftMazeApi
 api-version: 1.13
 description: An API for generating mazes. That is all.
 website: https://github.com/Connor14/MinecraftMazeAPI
+commands:
+  maze:
+    description: Generates a new maze
+    usage: /maze <cell rows> <cell columns> <path width> <wall thickness> <wall height> <LEFT, MIDDLE, RIGHT, or CENTER>
