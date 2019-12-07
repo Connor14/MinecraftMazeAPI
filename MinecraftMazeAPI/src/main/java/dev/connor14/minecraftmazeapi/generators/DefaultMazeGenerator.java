@@ -1,7 +1,13 @@
 package dev.connor14.minecraftmazeapi.generators;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
+import dev.connor14.minecraftmazeapi.generators.options.MazeGeneratorOptions;
+import dev.connor14.minecraftmazeapi.maze.IMaze;
+import dev.connor14.minecraftmazeapi.utility.Cell;
 import org.bukkit.Material;
 
 import dev.connor14.minecraftmazeapi.utility.CellDirection;
@@ -9,16 +15,22 @@ import dev.connor14.minecraftmazeapi.utility.CellDirection;
 // todo need to cache the position of the player so that the location doesn't
 // change during long running actions?
 
-public class DefaultMazeGenerator extends MazeGenerator {
+public class DefaultMazeGenerator implements IMazeGenerator {
+
+    private IMaze maze;
+    private MazeGeneratorOptions options;
 
     // Additional Maze Settings
     private final int pathWidth;
     private final int wallThickness;
     private final int wallHeight;
+    private final int layerCount;
+    private final int stairwellCount;
 
     // Calculated Values
     private final int cellToBlockOffset;
 
+    private final int layerHeight;
     private final int blockHeight;
     private final int blockRows;
     private final int blockColumns;
@@ -26,16 +38,20 @@ public class DefaultMazeGenerator extends MazeGenerator {
     // Generator Output
     private final Material[][][] blockGrid;
 
-    public DefaultMazeGenerator(int rows, int columns, int pathWidth, int wallThickness, int wallHeight) {
-        super(rows, columns);
+    public DefaultMazeGenerator(IMaze maze, MazeGeneratorOptions options) {
+        this.maze = maze;
+        this.options = options;
 
-        this.pathWidth = pathWidth;
-        this.wallThickness = wallThickness;
-        this.wallHeight = wallHeight;
+        this.pathWidth = options.getPathWidth();
+        this.wallThickness = options.getWallThickness();
+        this.wallHeight = options.getWallHeight();
+        this.layerCount = options.getLayerCount();
+        this.stairwellCount = options.getStairwellCount();
 
         cellToBlockOffset = pathWidth + wallThickness;
 
-        blockHeight = 1 + wallHeight; // floor + wallHeight
+        layerHeight = (1 + wallHeight); // (floor + wallHeight)
+        blockHeight = layerHeight * layerCount; // layerHeight * layerCount
         blockRows = (maze.getRows() * cellToBlockOffset) + wallThickness;
         blockColumns = (maze.getColumns() * cellToBlockOffset) + wallThickness;
 
@@ -56,35 +72,56 @@ public class DefaultMazeGenerator extends MazeGenerator {
             }
         }
 
-        Material fillMaterial = Material.OAK_WOOD;
-        for (int y = 0; y < blockHeight; y++) {
+        for (int layer = 0; layer < layerCount; layer++) {
 
-            // floor
-            if (y == 0) {
-                fillMaterial = Material.OAK_WOOD;
+            maze.generate(); // generate a maze for this layer
 
-            } else {// passages
-                fillMaterial = Material.AIR;
+            // generate stairwell cells
+            List<Cell> stairwellCells = new ArrayList<Cell>();
+            for (int stairwell = 0; stairwell < stairwellCount; stairwell++) {
+                stairwellCells.add(new Cell(maze.getRandomColumn(), maze.getRandomRow()));
             }
 
-            for (int z = 0; z < maze.getRows(); z++) {
-                for (int x = 0; x < maze.getColumns(); x++) {
-                    // generate the intersection
-                    if (maze.getCellValue(x, z) != 0) {
-                        populateGridCell(x, y, z, fillMaterial);
-                    }
+            Material fillMaterial = Material.OAK_WOOD;
+            for (int y = layer * layerHeight; y < (layer * layerHeight) + layerHeight; y++) {
+                // floor
+                if (y == layer * layerHeight) {
+                    fillMaterial = Material.OAK_WOOD;
+                } else {// passages
+                    fillMaterial = Material.AIR;
+                }
 
-                    // todo do I need to populate all cells again here just in case they are 0?
-                    if (maze.cellPointsTo(x, z, CellDirection.SOUTH)) {
-                        removeSouthWall(x, y, z, fillMaterial);
-                    }
+                for (int z = 0; z < maze.getRows(); z++) {
+                    for (int x = 0; x < maze.getColumns(); x++) {
 
-                    if (maze.cellPointsTo(x, z, CellDirection.EAST)) {
-                        removeEastWall(x, y, z, fillMaterial);
+                        // create the stair in the floor
+
+
+                        // generate the intersection
+                        if (maze.getCellValue(x, z) != 0) {
+                            populateGridCell(x, y, z, fillMaterial);
+                        }
+
+                        // todo do I need to populate all cells again here just in case they are 0?
+                        if (maze.cellPointsTo(x, z, CellDirection.SOUTH)) {
+                            removeSouthWall(x, y, z, fillMaterial);
+                        }
+
+                        if (maze.cellPointsTo(x, z, CellDirection.EAST)) {
+                            removeEastWall(x, y, z, fillMaterial);
+                        }
                     }
                 }
             }
+
+            // put holes in the floor based on the cells. Put at layer * layerHeight
+            for (int stairwell = 0; stairwell < stairwellCount; stairwell++) {
+                Cell cell = stairwellCells.get(stairwell);
+                populateGridCell(cell.x, layer * layerHeight, cell.z, Material.AIR);
+            }
+
         }
+
     }
 
     // Helper functions

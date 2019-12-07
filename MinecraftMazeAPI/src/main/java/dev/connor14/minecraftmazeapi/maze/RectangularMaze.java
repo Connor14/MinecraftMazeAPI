@@ -6,7 +6,7 @@ import dev.connor14.minecraftmazeapi.utility.Cell;
 import dev.connor14.minecraftmazeapi.utility.CellDirection;
 
 // Based on: http://weblog.jamisbuck.org/2011/1/27/maze-generation-growing-tree-algorithm
-public class Maze {
+public class RectangularMaze implements IMaze {
 
     private int rows;
     private int columns;
@@ -14,17 +14,15 @@ public class Maze {
     private int[][] grid;
     private ArrayList<Cell> cells;
 
-    public Maze(int rows, int columns) {
+    public RectangularMaze(int rows, int columns) {
         this.rows = rows;
         this.columns = columns;
+    }
 
+    public void generate() {
         grid = new int[rows][columns];
         cells = new ArrayList<Cell>();
 
-        generateCellGrid();
-    }
-
-    private void generateCellGrid() {
         // select a random grid cell
         // subtract 1 so we don't go out of bounds
 

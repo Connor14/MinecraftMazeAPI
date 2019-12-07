@@ -1,7 +1,9 @@
 package dev.connor14.minecraftmazeapi.commands;
 
 import dev.connor14.minecraftmazeapi.generators.DefaultMazeGenerator;
-import dev.connor14.minecraftmazeapi.generators.MazeGenerator;
+import dev.connor14.minecraftmazeapi.generators.IMazeGenerator;
+import dev.connor14.minecraftmazeapi.generators.options.MazeGeneratorOptions;
+import dev.connor14.minecraftmazeapi.maze.RectangularMaze;
 import dev.connor14.minecraftmazeapi.utility.CardinalDirection;
 import dev.connor14.minecraftmazeapi.utility.PlacementPosition;
 import dev.connor14.minecraftmazeapi.writers.DefaultMazeWriter;
@@ -16,7 +18,7 @@ public class CommandMazeGenerate implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (args.length != 6) {
+        if (args.length != 8) {
             return false;
         }
 
@@ -29,10 +31,19 @@ public class CommandMazeGenerate implements CommandExecutor {
         int pathWidth = Integer.parseInt(args[2]);
         int wallThickness = Integer.parseInt(args[3]);
         int wallHeight = Integer.parseInt(args[4]);
+        int layerCount = Integer.parseInt(args[5]);
+        int stairCount = Integer.parseInt(args[6]);
 
-        PlacementPosition placement = PlacementPosition.valueOf(args[5]);
+        PlacementPosition placement = PlacementPosition.valueOf(args[7]);
 
-        MazeGenerator generator = new DefaultMazeGenerator(rows, columns, pathWidth, wallThickness, wallHeight);
+        MazeGeneratorOptions options = new MazeGeneratorOptions();
+        options.setPathWidth(pathWidth);
+        options.setWallThickness(wallThickness);
+        options.setWallHeight(wallHeight);
+        options.setLayerCount(layerCount);
+        options.setStairwellCount(stairCount);
+
+        IMazeGenerator generator = new DefaultMazeGenerator(new RectangularMaze(rows, columns), options);
 
         MazeWriter writer = null;
         if (sender instanceof Player) {
@@ -46,7 +57,7 @@ public class CommandMazeGenerate implements CommandExecutor {
                 BlockFace facing = ((org.bukkit.block.data.Directional) block.getBlockData()).getFacing();
                 writer = new DefaultMazeWriter(block.getLocation(), CardinalDirection.getDirection(facing), placement);
             } else {
-                sender.sendMessage("Invalid sender");
+                sender.sendMessage("This BlockCommandSender is not implemented yet");
                 return false;
             }
         } else if (sender instanceof ConsoleCommandSender) {
